@@ -1,0 +1,9 @@
+payment_type_id,payment_name,is_cash
+0,Not specified,false
+1,Credit card,false
+2,Cash,true
+3,No charge,false
+4,Dispute,false
+5,Unknown,false
+6,Voided trip,false
+99,Unknown,false
