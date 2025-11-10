@@ -1,0 +1,27 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# dbt artifacts
+target/
+dbt_packages/
+logs/
+
+# Data files
+data/raw/
+data/*.duckdb
+data/*.duckdb.wal
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
