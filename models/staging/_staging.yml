@@ -1,0 +1,106 @@
+# staging layer schema definitions
+# these models do basic cleaning and renaming from source data
+version: 2
+
+models:
+  - name: stg_yellow_trips
+    description: Cleaned and standardized yellow taxi trip records
+    columns:
+      - name: vendor_id
+        description: Code indicating the TPEP provider (1=CMT, 2=VTS)
+      - name: rate_code_id
+        description: Final rate code in effect at end of trip
+        data_tests:
+          - not_null  # coalesced to 99 (unknown) in the model so this should never fail
+      - name: pickup_location_id
+        description: TLC Taxi Zone for pickup location
+        data_tests:
+          - not_null
+      - name: dropoff_location_id
+        description: TLC Taxi Zone for dropoff location
+        data_tests:
+          - not_null
+      - name: payment_type_id
+        description: Payment type code
+        data_tests:
+          - not_null
+      - name: pickup_datetime
+        description: Date and time when meter was engaged
+        data_tests:
+          - not_null
+      - name: dropoff_datetime
+        description: Date and time when meter was disengaged
+        data_tests:
+          - not_null
+      - name: passenger_count
+        # driver-entered so not always accurate, but good enough for analysis
+        description: Number of passengers (driver-entered)
+      - name: trip_distance
+        description: Trip distance in miles reported by taximeter
+      - name: fare_amount
+        description: Time-and-distance fare calculated by meter
+      - name: tip_amount
+        # only populated for credit card payments, cash tips aren't tracked
+        description: Tip amount (auto-populated for credit card tips)
+      - name: total_amount
+        description: Total amount charged to passengers
+      - name: taxi_type
+        description: Type of taxi (yellow)
+        data_tests:
+          - accepted_values:
+              values: ['yellow']
+
+  - name: stg_green_trips
+    # schema is identical to yellow trips, just different source
+    description: Cleaned and standardized green taxi trip records
+    columns:
+      - name: vendor_id
+        description: Code indicating the LPEP provider
+      - name: rate_code_id
+        description: Final rate code in effect at end of trip
+        data_tests:
+          - not_null
+      - name: pickup_location_id
+        description: TLC Taxi Zone for pickup location
+        data_tests:
+          - not_null
+      - name: dropoff_location_id
+        description: TLC Taxi Zone for dropoff location
+        data_tests:
+          - not_null
+      - name: payment_type_id
+        description: Payment type code
+        data_tests:
+          - not_null
+      - name: pickup_datetime
+        description: Date and time when meter was engaged
+        data_tests:
+          - not_null
+      - name: dropoff_datetime
+        description: Date and time when meter was disengaged
+        data_tests:
+          - not_null
+      - name: taxi_type
+        description: Type of taxi (green)
+        data_tests:
+          - accepted_values:
+              values: ['green']
+
+  - name: stg_taxi_zones
+    description: NYC TLC taxi zone reference data
+    columns:
+      - name: location_id
+        description: Unique identifier for taxi zone
+        data_tests:
+          - unique
+          - not_null
+      - name: borough
+        description: NYC borough name
+        data_tests:
+          - not_null
+      - name: zone_name
+        description: Name of the taxi zone
+        data_tests:
+          - not_null
+      - name: service_zone
+        description: Service zone classification
