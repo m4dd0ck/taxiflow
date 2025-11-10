@@ -1,0 +1,9 @@
+taxiflow:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: 'data/taxiflow.duckdb'
+      threads: 4
+      extensions:
+        - parquet
