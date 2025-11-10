@@ -1,0 +1,48 @@
+# taxiflow dbt project
+# nyc taxi trip data warehouse using duckdb
+# started as a weekend project to learn dbt, grew from there
+
+name: taxiflow
+version: '1.0.0'
+config-version: 2
+
+profile: taxiflow
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+# date range for filtering trip data
+# keeping this small for local development - adjust for full runs
+vars:
+  start_date: '2024-10-01'
+  end_date: '2024-11-30'
+
+models:
+  taxiflow:
+    staging:
+      +materialized: view
+      +schema: staging
+    intermediate:
+      +materialized: view
+      +schema: intermediate
+    dimensions:
+      +materialized: table
+      +schema: dimensions
+    facts:
+      +materialized: incremental
+      +schema: facts
+    marts:
+      +materialized: table
+      +schema: marts
+
+seeds:
+  taxiflow:
+    +schema: seeds
