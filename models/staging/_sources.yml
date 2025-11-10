@@ -1,0 +1,15 @@
+version: 2
+
+sources:
+  - name: nyc_tlc
+    description: NYC Taxi & Limousine Commission trip data
+    tables:
+      - name: yellow_tripdata
+        description: Yellow taxi trip records loaded directly from Parquet files
+        meta:
+          external_location: "read_parquet('data/raw/yellow/*.parquet')"
+
+      - name: green_tripdata
+        description: Green taxi trip records loaded directly from Parquet files
+        meta:
+          external_location: "read_parquet('data/raw/green/*.parquet')"
