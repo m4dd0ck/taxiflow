@@ -1,0 +1,45 @@
+# intermediate models - transformations between staging and facts
+version: 2
+
+models:
+  - name: int_trips_union
+    # combines both taxi types so downstream models don't need to handle them separately
+    description: Union of yellow and green taxi trips with standardized schema
+    columns:
+      - name: taxi_type
+        description: Type of taxi (yellow or green)
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['yellow', 'green']
+      - name: pickup_datetime
+        description: Date and time when meter was engaged
+        data_tests:
+          - not_null
+      - name: dropoff_datetime
+        description: Date and time when meter was disengaged
+        data_tests:
+          - not_null
+
+  - name: int_trips_enriched
+    # adds calculated fields that would be tedious to repeat in every mart
+    description: Trips with derived metrics (duration, speed, tip percentage)
+    columns:
+      - name: taxi_type
+        description: Type of taxi (yellow or green)
+        data_tests:
+          - not_null
+      - name: pickup_datetime
+        description: Date and time when meter was engaged
+        data_tests:
+          - not_null
+      - name: trip_duration_minutes
+        description: Calculated trip duration in minutes
+        data_tests:
+          - not_null
+      - name: tip_percentage
+        description: Tip as percentage of fare (credit card only)
+      - name: avg_speed_mph
+        description: Average speed in miles per hour
+      - name: fare_per_mile
+        description: Fare amount divided by trip distance
