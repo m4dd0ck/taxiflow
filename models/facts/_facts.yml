@@ -1,0 +1,121 @@
+# fact tables - the core of the data model
+version: 2
+
+models:
+  - name: fct_trips
+    # this is where most of the data lives - can get big with full date ranges
+    description: |
+      Fact table containing one record per taxi trip.
+      Includes dimension keys and calculated metrics.
+
+      **Grain**: One row per taxi trip
+      **Update Strategy**: Incremental (append new trips)
+    columns:
+      - name: trip_id
+        # hashing business keys since the source has no natural primary key
+        description: Surrogate key for trip (MD5 hash of business keys)
+        data_tests:
+          - unique
+          - not_null
+
+      - name: pickup_date_key
+        description: Foreign key to dim_date for pickup date
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('dim_date')
+              field: date_key
+
+      - name: pickup_time_key
+        description: Foreign key to dim_time for pickup time
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('dim_time')
+              field: time_key
+
+      - name: dropoff_date_key
+        description: Foreign key to dim_date for dropoff date
+        data_tests:
+          - not_null
+
+      - name: dropoff_time_key
+        description: Foreign key to dim_time for dropoff time
+        data_tests:
+          - not_null
+
+      - name: pickup_location_id
+        description: Foreign key to dim_location for pickup zone
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('dim_location')
+              field: location_id
+
+      - name: dropoff_location_id
+        description: Foreign key to dim_location for dropoff zone
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('dim_location')
+              field: location_id
+
+      - name: rate_code_id
+        description: Foreign key to dim_rate_code
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('dim_rate_code')
+              field: rate_code_id
+
+      - name: payment_type_id
+        description: Foreign key to dim_payment_type
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('dim_payment_type')
+              field: payment_type_id
+
+      - name: taxi_type
+        description: Type of taxi (yellow or green)
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['yellow', 'green']
+
+      - name: passenger_count
+        description: Number of passengers
+
+      - name: trip_distance
+        description: Trip distance in miles
+        data_tests:
+          - not_null
+
+      - name: trip_duration_minutes
+        description: Trip duration in minutes
+        data_tests:
+          - not_null
+
+      - name: fare_amount
+        description: Base fare amount in USD
+        data_tests:
+          - not_null
+
+      - name: tip_amount
+        description: Tip amount in USD
+        data_tests:
+          - not_null
+
+      - name: total_amount
+        description: Total amount charged to passenger
+        data_tests:
+          - not_null
+
+      - name: tip_percentage
+        description: Tip as percentage of fare
+
+      - name: avg_speed_mph
+        description: Average trip speed in MPH
+
+      - name: fare_per_mile
+        description: Fare per mile in USD
