@@ -1,0 +1,130 @@
+# dimension tables for the star schema
+# these are all type 1 (no history tracking) since the attributes don't change
+version: 2
+
+models:
+  - name: dim_date
+    description: |
+      Date dimension containing one row per calendar date.
+      Covers dates from 2020 to 2026.
+
+      **Grain**: One row per calendar date
+    columns:
+      - name: date_key
+        description: Integer surrogate key in YYYYMMDD format
+        data_tests:
+          - unique
+          - not_null
+      - name: full_date
+        description: Full date value
+        data_tests:
+          - not_null
+      - name: year
+        description: Calendar year
+      - name: quarter
+        description: Calendar quarter (1-4)
+      - name: month_num
+        description: Month number (1-12)
+      - name: month_name
+        description: Full month name
+      - name: week_of_year
+        description: ISO week number
+      - name: day_of_month
+        description: Day of month (1-31)
+      - name: day_of_week
+        description: Day of week (0=Sunday, 6=Saturday)
+      - name: day_name
+        description: Full day name
+      - name: is_weekend
+        description: True if Saturday or Sunday
+      - name: is_holiday
+        description: True if US federal holiday
+
+  - name: dim_time
+    # minute grain might be overkill but it's only 1440 rows
+    description: |
+      Time dimension containing one row per minute of day.
+
+      **Grain**: One row per minute (1440 total rows)
+    columns:
+      - name: time_key
+        description: Integer surrogate key in HHMM format (0-2359)
+        data_tests:
+          - unique
+          - not_null
+      - name: hour
+        description: Hour of day (0-23)
+        data_tests:
+          - not_null
+      - name: minute
+        description: Minute of hour (0-59)
+        data_tests:
+          - not_null
+      - name: time_string
+        description: Time as HH:MM string
+      - name: time_of_day
+        description: Time classification (Morning, Afternoon, Evening, Night)
+      - name: is_rush_hour
+        description: True if 7-9 AM or 4-7 PM
+      - name: shift
+        description: Taxi shift classification (Day, Evening, Night)
+
+  - name: dim_location
+    description: |
+      NYC TLC taxi zone dimension.
+
+      **Grain**: One row per taxi zone
+    columns:
+      - name: location_id
+        description: Unique taxi zone identifier
+        data_tests:
+          - unique
+          - not_null
+      - name: zone_name
+        description: Name of the taxi zone
+        data_tests:
+          - not_null
+      - name: borough
+        description: NYC borough
+        data_tests:
+          - not_null
+      - name: service_zone
+        description: Service zone classification
+      - name: is_unknown
+        description: True for unknown/placeholder record
+
+  - name: dim_rate_code
+    description: |
+      Rate code dimension for trip fare types.
+
+      **Grain**: One row per rate code
+    columns:
+      - name: rate_code_id
+        description: Rate code identifier
+        data_tests:
+          - unique
+          - not_null
+      - name: rate_code_name
+        description: Short name for rate code
+        data_tests:
+          - not_null
+      - name: description
+        description: Detailed description
+
+  - name: dim_payment_type
+    description: |
+      Payment type dimension.
+
+      **Grain**: One row per payment type
+    columns:
+      - name: payment_type_id
+        description: Payment type identifier
+        data_tests:
+          - unique
+          - not_null
+      - name: payment_name
+        description: Payment type name
+        data_tests:
+          - not_null
+      - name: is_cash
+        description: True if cash payment
