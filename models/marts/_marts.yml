@@ -1,0 +1,134 @@
+# marts - aggregated tables for specific use cases
+# these are what most dashboards and reports should query
+version: 2
+
+models:
+  - name: mart_daily_summary
+    description: |
+      Daily aggregated trip metrics by date, borough, and taxi type.
+      Use for executive dashboards and trend analysis.
+
+      **Grain**: One row per date + borough + taxi type combination
+    columns:
+      - name: pickup_date_key
+        description: Date key in YYYYMMDD format
+        data_tests:
+          - not_null
+      - name: borough
+        description: NYC borough of pickup location
+      - name: taxi_type
+        description: Type of taxi (yellow or green)
+        data_tests:
+          - not_null
+      - name: total_trips
+        description: Count of trips
+        data_tests:
+          - not_null
+      - name: total_passengers
+        description: Sum of passengers
+      - name: total_distance_miles
+        description: Sum of trip distances
+      - name: avg_distance_miles
+        description: Average trip distance
+      - name: total_duration_minutes
+        description: Sum of trip durations
+      - name: avg_duration_minutes
+        description: Average trip duration
+      - name: total_fare_amount
+        description: Sum of fare amounts
+      - name: total_tip_amount
+        description: Sum of tip amounts
+      - name: total_revenue
+        description: Sum of total amounts
+      - name: avg_fare_amount
+        description: Average fare per trip
+      - name: avg_tip_percentage
+        description: Average tip percentage
+      - name: avg_speed_mph
+        description: Average trip speed
+      - name: avg_fare_per_mile
+        description: Average fare per mile
+
+  - name: mart_hourly_patterns
+    # aggregated across all dates so patterns emerge across the weekly cycle
+    description: |
+      Hourly demand patterns by day of week and borough.
+      Use for demand forecasting and fleet optimization.
+
+      **Grain**: One row per day_of_week + hour + borough combination
+    columns:
+      - name: day_of_week
+        description: Day of week (0=Sunday to 6=Saturday)
+        data_tests:
+          - not_null
+      - name: day_name
+        description: Full day name
+      - name: hour_of_day
+        description: Hour of day (0-23)
+        data_tests:
+          - not_null
+      - name: borough
+        description: NYC borough of pickup location
+      - name: total_trips
+        description: Count of trips
+        data_tests:
+          - not_null
+      - name: total_passengers
+        description: Sum of passengers
+      - name: total_revenue
+        description: Sum of total amounts
+      - name: avg_fare_amount
+        description: Average fare per trip
+      - name: avg_distance_miles
+        description: Average trip distance
+      - name: avg_duration_minutes
+        description: Average trip duration
+      - name: avg_speed_mph
+        description: Average trip speed
+
+  - name: mart_zone_performance
+    # can be a large table due to zone combinations, filtered to 10+ trips to keep it reasonable
+    description: |
+      Zone-to-zone trip performance metrics.
+      Use for geographic analysis and route optimization.
+
+      **Grain**: One row per pickup_zone + dropoff_zone combination (with 10+ trips)
+    columns:
+      - name: pickup_location_id
+        description: Pickup taxi zone ID
+        data_tests:
+          - not_null
+      - name: pickup_zone_name
+        description: Pickup zone name
+      - name: pickup_borough
+        description: Pickup borough
+      - name: dropoff_location_id
+        description: Dropoff taxi zone ID
+        data_tests:
+          - not_null
+      - name: dropoff_zone_name
+        description: Dropoff zone name
+      - name: dropoff_borough
+        description: Dropoff borough
+      - name: total_trips
+        description: Count of trips on this route
+        data_tests:
+          - not_null
+      - name: total_passengers
+        description: Sum of passengers
+      - name: total_distance_miles
+        description: Sum of trip distances
+      - name: avg_distance_miles
+        description: Average trip distance
+      - name: avg_duration_minutes
+        description: Average trip duration
+      - name: total_revenue
+        description: Sum of total amounts
+      - name: avg_fare_amount
+        description: Average fare per trip
+      - name: avg_tip_percentage
+        description: Average tip percentage
+      - name: avg_speed_mph
+        description: Average trip speed
+      - name: avg_fare_per_mile
+        description: Average fare per mile
