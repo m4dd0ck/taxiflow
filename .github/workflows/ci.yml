@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Install dbt packages
+        run: uv run dbt deps --profiles-dir .
+
+      - name: Run dbt build
+        run: uv run dbt build --profiles-dir . --select state:modified+ --defer --state ./target
+        continue-on-error: true
+
+      - name: Run dbt tests
+        run: uv run dbt test --profiles-dir .
