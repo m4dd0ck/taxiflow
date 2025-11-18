@@ -80,6 +80,38 @@ Data includes:
 - Green taxi trips (~500K/month)
 - Taxi zone lookup reference
 
+## Orchestration with Dagster
+
+The pipeline includes Dagster orchestration for production scheduling and monitoring.
+
+### Running with Dagster
+
+```bash
+# generate dbt manifest (required for dagster-dbt)
+make manifest
+
+# start dagster dev server
+make dagster
+# then open http://localhost:3000
+
+# or run the full pipeline directly
+make pipeline
+```
+
+### Pipeline Jobs
+
+| Job | Description |
+|-----|-------------|
+| `taxiflow_full_pipeline` | Full ELT: download data → dbt build → quality checks |
+| `dbt_only` | Run only dbt models (assumes data exists) |
+| `ingestion_only` | Download raw data only |
+| `marts_refresh` | Refresh marts and quality report |
+
+### Schedules
+
+- **Monthly full refresh**: Runs on the 5th of each month (after TLC publishes data)
+- **Daily marts refresh**: Updates mart tables daily at 7 AM
+
 ## Project Structure
 
 ```
@@ -90,6 +122,12 @@ taxiflow/
 │   ├── dimensions/      # Dimension tables
 │   ├── facts/           # Fact tables
 │   └── marts/           # Business aggregations
+├── orchestration/       # Dagster pipeline
+│   ├── assets/          # Data assets
+│   ├── resources/       # dbt resource config
+│   ├── jobs.py          # Job definitions
+│   ├── schedules.py     # Schedule definitions
+│   └── definitions.py   # Dagster entry point
 ├── seeds/               # Reference data (CSV)
 ├── macros/              # Reusable SQL
 ├── tests/               # Custom data tests
