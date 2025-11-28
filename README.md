@@ -167,6 +167,131 @@ The pipeline produces these analytics:
 - **Efficiency**: Average speed, trip duration, trips per hour
 - **Customer Behavior**: Tip percentages, payment preferences
 
+## Sample Queries & Output
+
+With 2 months of data (Oct-Nov 2024), the pipeline processes **7.3 million trips** into actionable analytics.
+
+### Revenue by Borough
+
+```sql
+SELECT
+    borough,
+    SUM(total_trips) as trips,
+    ROUND(SUM(total_revenue), 2) as revenue,
+    ROUND(AVG(avg_fare_amount), 2) as avg_fare
+FROM main_marts.mart_daily_summary
+WHERE borough IS NOT NULL
+GROUP BY borough
+ORDER BY revenue DESC;
+```
+
+```
+Borough              Trips         Revenue   Avg Fare
+-------------------------------------------------------
+Manhattan        6,505,045  $158,226,534.52    $16.14
+Queens             669,244   $48,155,119.11    $37.19
+Brooklyn           137,800    $4,253,816.11    $25.71
+Bronx               25,353      $909,933.25    $29.82
+Staten Island          371       $15,084.87    $28.26
+```
+
+Manhattan dominates with 88% of trips, but Queens generates disproportionate revenue due to airport traffic (avg fare $37 vs $16).
+
+### Rush Hour vs Off-Peak
+
+```sql
+SELECT
+    CASE
+        WHEN hour_of_day BETWEEN 7 AND 9 THEN 'Morning Rush (7-9 AM)'
+        WHEN hour_of_day BETWEEN 17 AND 19 THEN 'Evening Rush (5-7 PM)'
+        ELSE 'Off-Peak'
+    END as period,
+    SUM(total_trips) as trips,
+    ROUND(AVG(avg_speed_mph), 1) as avg_speed,
+    ROUND(AVG(avg_fare_amount), 2) as avg_fare
+FROM main_marts.mart_hourly_patterns
+GROUP BY 1
+ORDER BY trips DESC;
+```
+
+```
+Period                        Trips   Avg Speed   Avg Fare
+------------------------------------------------------------
+Off-Peak                  5,798,933    34.2 mph    $31.06
+Evening Rush (5-7 PM)     1,055,244    19.5 mph    $32.09
+Morning Rush (7-9 AM)       503,801    28.4 mph    $31.77
+```
+
+Evening rush shows 43% slower speeds than off-peak due to congestion.
+
+### Top 10 Most Popular Routes
+
+```sql
+SELECT
+    pickup_zone_name,
+    dropoff_zone_name,
+    total_trips,
+    ROUND(total_revenue, 2) as revenue
+FROM main_marts.mart_zone_performance
+ORDER BY total_trips DESC
+LIMIT 10;
+```
+
+```
+Pickup Zone                Dropoff Zone                 Trips      Revenue
+---------------------------------------------------------------------------
+Upper East Side South      Upper East Side North       54,984    $875,278
+Upper East Side North      Upper East Side South       47,223    $769,822
+Upper East Side South      Upper East Side South       36,698    $515,814
+Upper East Side North      Upper East Side North       33,731    $444,928
+Midtown Center             Upper East Side South       25,257    $448,052
+```
+
+The Upper East Side corridor is the busiest route pair in NYC.
+
+### Airport Trip Analysis
+
+```sql
+SELECT
+    pickup_zone_name,
+    dropoff_zone_name,
+    total_trips,
+    ROUND(avg_fare_amount, 2) as avg_fare,
+    ROUND(avg_tip_percentage, 1) as tip_pct
+FROM main_marts.mart_zone_performance
+WHERE pickup_zone_name LIKE '%Airport%'
+   OR dropoff_zone_name LIKE '%Airport%'
+ORDER BY total_trips DESC
+LIMIT 5;
+```
+
+```
+Pickup                     Dropoff                     Trips  Avg Fare  Tip %
+--------------------------------------------------------------------------------
+JFK Airport                Times Sq/Theatre District  17,460   $70.81   15.0%
+LaGuardia Airport          Times Sq/Theatre District  14,780   $51.70   21.8%
+JFK Airport                Outside of NYC             14,271  $109.81   61.0%
+Times Sq/Theatre District  LaGuardia Airport          10,254   $51.75   20.5%
+LaGuardia Airport          Midtown Center              9,351   $48.33   23.2%
+```
+
+JFK trips average $70+ (flat rate to Manhattan). LaGuardia passengers tip better (22% vs 15%).
+
+### Connect and Query
+
+```bash
+# Using Python
+uv run python -c "
+import duckdb
+con = duckdb.connect('data/taxiflow.duckdb', read_only=True)
+result = con.execute('SELECT * FROM main_marts.mart_daily_summary LIMIT 5').df()
+print(result)
+"
+
+# Using DuckDB CLI (if installed)
+duckdb data/taxiflow.duckdb -c "SELECT * FROM main_marts.mart_daily_summary LIMIT 5"
+```
+
 ## License
 
 MIT
