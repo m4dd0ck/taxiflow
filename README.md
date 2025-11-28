@@ -1,13 +1,6 @@
-# TaxiFlow: NYC Taxi Analytics Pipeline
+# TaxiFlow
 
-A production-grade ELT pipeline that transforms NYC taxi trip records into actionable analytics using dbt-core, DuckDB, and dimensional modeling best practices.
-
-## Features
-
-- **Star Schema Design**: Dimensional model with 5 dimensions and a central fact table
-- **Incremental Processing**: Efficient fact table updates using dbt incremental materialization
-- **Data Quality**: 74 automated tests including uniqueness, referential integrity, and value validation
-- **Full Documentation**: Auto-generated dbt docs with model descriptions and data lineage
+dbt + DuckDB pipeline for NYC taxi data. Downloads TLC trip records, builds a star schema, outputs analytics marts.
 
 ## Quick Start
 
@@ -51,7 +44,7 @@ uv run dbt docs serve --profiles-dir .
 | intermediate | Transform and union datasets | View |
 | dimensions | Conformed dimension tables | Table |
 | facts | Transaction-level records | Incremental |
-| marts | Business-ready aggregations | Table |
+| marts | Aggregated reports | Table |
 
 ### Models
 
@@ -82,7 +75,7 @@ Data includes:
 
 ## Orchestration with Dagster
 
-The pipeline includes Dagster orchestration for production scheduling and monitoring.
+Dagster handles scheduling and orchestration.
 
 ### Running with Dagster
 
@@ -121,7 +114,7 @@ taxiflow/
 │   ├── intermediate/    # Transform and union
 │   ├── dimensions/      # Dimension tables
 │   ├── facts/           # Fact tables
-│   └── marts/           # Business aggregations
+│   └── marts/           # Aggregations
 ├── orchestration/       # Dagster pipeline
 │   ├── assets/          # Data assets
 │   ├── resources/       # dbt resource config
@@ -169,7 +162,7 @@ The pipeline produces these analytics:
 
 ## Sample Queries & Output
 
-With 2 months of data (Oct-Nov 2024), the pipeline processes **7.3 million trips** into actionable analytics.
+With 2 months of data (Oct-Nov 2024), the pipeline processes **7.3 million trips**.
 
 ### Revenue by Borough
 

@@ -25,4 +25,6 @@ jobs:
         run: uv run dbt deps --profiles-dir .
 
       - name: Compile dbt models
-        run: uv run dbt compile --profiles-dir .
+        run: |
+          mkdir -p data
+          uv run dbt compile --profiles-dir .
