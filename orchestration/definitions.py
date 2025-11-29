@@ -1,11 +1,4 @@
-"""Dagster definitions for the taxiflow pipeline.
-
-This is the main entry point for Dagster. Run with:
-    dagster dev -m orchestration.definitions
-
-Or for production:
-    dagster-webserver -m orchestration.definitions
-"""
+"""Dagster definitions for the taxiflow pipeline."""
 
 from dagster import Definitions, load_assets_from_modules
 
@@ -21,11 +14,7 @@ from .jobs import (
 from .schedules import monthly_full_refresh, daily_marts_refresh
 
 
-# load all assets from the assets module
 all_assets = load_assets_from_modules([assets])
-
-# combine with dbt assets
-# note: dbt_taxiflow_assets is already included via assets module import
 
 defs = Definitions(
     assets=all_assets,

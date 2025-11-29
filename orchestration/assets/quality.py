@@ -1,7 +1,4 @@
-"""Data quality assets.
-
-Runs quality checks after dbt models are built and generates reports.
-"""
+"""Data quality assets."""
 
 from pathlib import Path
 
@@ -20,14 +17,7 @@ DUCKDB_PATH = PROJECT_ROOT / "data" / "taxiflow.duckdb"
     deps=["mart_daily_summary", "mart_hourly_patterns", "mart_zone_performance"],
 )
 def data_quality_report(context: AssetExecutionContext) -> MaterializeResult:
-    """Generate data quality metrics for mart tables.
-
-    Checks:
-    - Row counts for each mart
-    - Null percentages for key columns
-    - Date range coverage
-    - Basic sanity checks (no negative values, etc.)
-    """
+    """Generate data quality metrics for mart tables."""
     conn = duckdb.connect(str(DUCKDB_PATH), read_only=True)
 
     metrics = {}
@@ -99,7 +89,6 @@ def data_quality_report(context: AssetExecutionContext) -> MaterializeResult:
 
     conn.close()
 
-    # determine overall status
     has_errors = any("error" in m for m in metrics.values())
     has_nulls = any(
         m.get("null_trips", 0) > 0 or m.get("negative_trips", 0) > 0

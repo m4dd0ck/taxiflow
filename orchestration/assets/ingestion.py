@@ -1,8 +1,4 @@
-"""Data ingestion assets for NYC taxi data.
-
-Downloads parquet files from the NYC TLC data portal.
-These upstream assets feed into the dbt models.
-"""
+"""Data ingestion assets for NYC taxi data."""
 
 from pathlib import Path
 from datetime import datetime
@@ -59,11 +55,7 @@ def _download_file(url: str, dest: Path, context: AssetExecutionContext) -> bool
     compute_kind="python",
 )
 def raw_taxi_data(context: AssetExecutionContext, config: TaxiDataConfig) -> MaterializeResult:
-    """Download raw taxi trip parquet files.
-
-    Downloads yellow and green taxi trip data for the specified date range.
-    Files are stored in data/raw/{taxi_type}/ directory.
-    """
+    """Download raw taxi trip parquet files."""
     start = datetime.strptime(config.start_month, "%Y-%m")
     end = datetime.strptime(config.end_month, "%Y-%m")
 
@@ -110,11 +102,7 @@ def raw_taxi_data(context: AssetExecutionContext, config: TaxiDataConfig) -> Mat
     compute_kind="python",
 )
 def taxi_zone_lookup(context: AssetExecutionContext) -> MaterializeResult:
-    """Download taxi zone lookup CSV.
-
-    This is reference data that maps zone IDs to borough/zone names.
-    Goes directly to seeds/ since dbt will load it as a seed.
-    """
+    """Download taxi zone lookup CSV."""
     dest = SEEDS_DIR / "taxi_zone_lookup.csv"
     dest.parent.mkdir(parents=True, exist_ok=True)
 
