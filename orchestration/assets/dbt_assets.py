@@ -1,8 +1,4 @@
-"""dbt assets for taxiflow.
-
-Uses dagster-dbt to automatically create assets from dbt models.
-Each dbt model becomes a Dagster asset with proper dependencies.
-"""
+"""dbt assets for taxiflow."""
 
 from pathlib import Path
 
@@ -23,16 +19,12 @@ class TaxiflowDbtTranslator(DagsterDbtTranslator):
     """Custom translator to configure how dbt models appear in Dagster."""
 
     def get_group_name(self, dbt_resource_props: dict) -> str:
-        """Group dbt models by their schema/folder."""
-        # use the dbt model's folder as the group name
         fqn = dbt_resource_props.get("fqn", [])
         if len(fqn) >= 2:
-            # fqn is like ["taxiflow", "staging", "stg_yellow_trips"]
-            return fqn[1]  # returns "staging", "intermediate", etc.
+            return fqn[1]
         return "dbt"
 
     def get_description(self, dbt_resource_props: dict) -> str:
-        """Use dbt model description if available."""
         return dbt_resource_props.get("description", "")
 
 
@@ -41,16 +33,5 @@ class TaxiflowDbtTranslator(DagsterDbtTranslator):
     dagster_dbt_translator=TaxiflowDbtTranslator(),
 )
 def dbt_taxiflow_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-    """All dbt models as Dagster assets.
-
-    This automatically creates an asset for each dbt model, seed, and snapshot.
-    Dependencies between models are preserved from the dbt DAG.
-
-    The assets are grouped by their dbt folder:
-    - staging: raw data cleaning and standardization
-    - intermediate: business logic and unions
-    - dimensions: dimension tables for the star schema
-    - facts: fact tables with measures
-    - marts: aggregated tables for reporting
-    """
+    """All dbt models as Dagster assets."""
     yield from dbt.cli(["build"], context=context).stream()
