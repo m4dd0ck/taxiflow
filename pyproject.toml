@@ -1,7 +1,7 @@
 [project]
 name = "taxiflow"
 version = "1.0.0"
-description = "Production-grade ELT pipeline for NYC taxi trip analytics using dbt-core and DuckDB"
+description = "dbt + DuckDB pipeline over NYC TLC taxi trip data: star schema and analytics marts"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
