@@ -10,7 +10,7 @@
 }}
 
 with source as (
-    select * from read_parquet('data/raw/green/*.parquet')
+    select * from {{ source('nyc_tlc', 'green_tripdata') }}
 ),
 
 renamed as (
