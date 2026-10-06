@@ -16,7 +16,7 @@ green_trips as (
     select * from {{ ref('stg_green_trips') }}
 ),
 
--- using explicit column list instead of select * to make the union more robust
+-- using explicit column list instead of select * so the union doesn't depend on column order
 -- this way if one source adds a new column it won't break the union
 -- learned this the hard way at my previous job when a vendor added columns
 unioned as (
