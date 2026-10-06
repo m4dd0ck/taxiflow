@@ -69,8 +69,7 @@ This project uses official NYC TLC trip record data:
 - [NYC TLC Trip Record Data](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page)
 
 Data includes:
-- Yellow taxi trips (~7M/month)
-- Green taxi trips (~500K/month)
+- Yellow and green taxi trips (about 3.6M/month combined for Oct-Nov 2024; yellow is the large majority)
 - Taxi zone lookup reference
 
 ## Orchestration with Dagster
@@ -122,14 +121,14 @@ taxiflow/
 │   ├── schedules.py     # Schedule definitions
 │   └── definitions.py   # Dagster entry point
 ├── seeds/               # Reference data (CSV)
-├── macros/              # Reusable SQL
 ├── tests/               # Custom data tests
 ├── scripts/             # Python utilities
-├── data/                # Local DuckDB + Parquet
 ├── dbt_project.yml      # dbt configuration
 ├── profiles.yml         # Connection settings
 └── packages.yml         # dbt package dependencies
 ```
+
+`data/` (raw Parquet and the DuckDB file) is created by the download script and ignored by git.
 
 ## Configuration
 
@@ -217,7 +216,7 @@ Morning Rush (7-9 AM)       503,801    28.4 mph    $31.77
 
 Evening rush shows 43% slower speeds than off-peak due to congestion.
 
-### Top 10 Most Popular Routes
+### Top 5 Most Popular Routes
 
 ```sql
 SELECT
@@ -227,7 +226,7 @@ SELECT
     ROUND(total_revenue, 2) as revenue
 FROM main_marts.mart_zone_performance
 ORDER BY total_trips DESC
-LIMIT 10;
+LIMIT 5;
 ```
 
 ```
