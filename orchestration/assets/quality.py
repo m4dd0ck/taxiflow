@@ -3,119 +3,89 @@
 from pathlib import Path
 
 import duckdb
-from dagster import asset, AssetExecutionContext, MaterializeResult, MetadataValue, AssetIn
-
+from dagster import (
+    AssetExecutionContext,
+    AssetKey,
+    MaterializeResult,
+    MetadataValue,
+    asset,
+)
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 DUCKDB_PATH = PROJECT_ROOT / "data" / "taxiflow.duckdb"
+
+# dbt-duckdb prefixes custom schemas with the target schema, so `+schema: marts`
+# lands in `main_marts`
+MARTS_SCHEMA = "main_marts"
 
 
 @asset(
     group_name="quality",
     description="Data quality report on the final mart tables",
     compute_kind="duckdb",
-    deps=["mart_daily_summary", "mart_hourly_patterns", "mart_zone_performance"],
+    deps=[
+        AssetKey(["marts", "mart_daily_summary"]),
+        AssetKey(["marts", "mart_hourly_patterns"]),
+        AssetKey(["marts", "mart_zone_performance"]),
+    ],
 )
 def data_quality_report(context: AssetExecutionContext) -> MaterializeResult:
-    """Generate data quality metrics for mart tables."""
+    """Generate data quality metrics for mart tables.
+
+    Raises on any query failure rather than reporting an error status, so a
+    schema drift in the marts fails the run instead of hiding in metadata.
+    """
     conn = duckdb.connect(str(DUCKDB_PATH), read_only=True)
-
-    metrics = {}
-
-    # check mart_daily_summary
     try:
-        result = conn.execute("""
+        daily = conn.execute(f"""
             SELECT
-                COUNT(*) as row_count,
-                MIN(trip_date) as min_date,
-                MAX(trip_date) as max_date,
-                COUNT(DISTINCT trip_date) as days_covered,
-                SUM(CASE WHEN total_trips IS NULL THEN 1 ELSE 0 END) as null_trips,
-                SUM(CASE WHEN total_trips < 0 THEN 1 ELSE 0 END) as negative_trips
-            FROM marts.mart_daily_summary
+                COUNT(*) AS row_count,
+                MIN(pickup_date_key) AS min_date_key,
+                MAX(pickup_date_key) AS max_date_key,
+                COUNT(DISTINCT pickup_date_key) AS days_covered,
+                SUM(CASE WHEN total_trips IS NULL THEN 1 ELSE 0 END) AS null_trips,
+                SUM(CASE WHEN total_trips < 0 THEN 1 ELSE 0 END) AS negative_trips
+            FROM {MARTS_SCHEMA}.mart_daily_summary
         """).fetchone()
+        context.log.info(f"mart_daily_summary: {daily[0]} rows, {daily[3]} days")
 
-        metrics["daily_summary"] = {
-            "row_count": result[0],
-            "date_range": f"{result[1]} to {result[2]}",
-            "days_covered": result[3],
-            "null_trips": result[4],
-            "negative_trips": result[5],
-        }
-        context.log.info(f"mart_daily_summary: {result[0]} rows, {result[3]} days")
-    except Exception as e:
-        context.log.warning(f"Could not check mart_daily_summary: {e}")
-        metrics["daily_summary"] = {"error": str(e)}
-
-    # check mart_hourly_patterns
-    try:
-        result = conn.execute("""
+        hourly = conn.execute(f"""
             SELECT
-                COUNT(*) as row_count,
-                COUNT(DISTINCT hour_of_day) as hours_covered,
-                COUNT(DISTINCT day_of_week) as days_of_week
-            FROM marts.mart_hourly_patterns
+                COUNT(*) AS row_count,
+                COUNT(DISTINCT hour_of_day) AS hours_covered,
+                COUNT(DISTINCT day_of_week) AS days_of_week
+            FROM {MARTS_SCHEMA}.mart_hourly_patterns
         """).fetchone()
+        context.log.info(f"mart_hourly_patterns: {hourly[0]} rows")
 
-        metrics["hourly_patterns"] = {
-            "row_count": result[0],
-            "hours_covered": result[1],
-            "days_of_week": result[2],
-        }
-        context.log.info(f"mart_hourly_patterns: {result[0]} rows")
-    except Exception as e:
-        context.log.warning(f"Could not check mart_hourly_patterns: {e}")
-        metrics["hourly_patterns"] = {"error": str(e)}
-
-    # check mart_zone_performance
-    try:
-        result = conn.execute("""
+        zones = conn.execute(f"""
             SELECT
-                COUNT(*) as row_count,
-                COUNT(DISTINCT pickup_zone) as zones_covered,
-                AVG(avg_trip_distance) as avg_distance
-            FROM marts.mart_zone_performance
+                COUNT(*) AS row_count,
+                COUNT(DISTINCT pickup_zone_name) AS zones_covered,
+                AVG(avg_distance_miles) AS avg_distance
+            FROM {MARTS_SCHEMA}.mart_zone_performance
         """).fetchone()
+        context.log.info(f"mart_zone_performance: {zones[0]} rows, {zones[1]} zones")
+    finally:
+        conn.close()
 
-        metrics["zone_performance"] = {
-            "row_count": result[0],
-            "zones_covered": result[1],
-            "avg_distance": round(result[2], 2) if result[2] else None,
-        }
-        context.log.info(f"mart_zone_performance: {result[0]} rows, {result[1]} zones")
-    except Exception as e:
-        context.log.warning(f"Could not check mart_zone_performance: {e}")
-        metrics["zone_performance"] = {"error": str(e)}
-
-    conn.close()
-
-    has_errors = any("error" in m for m in metrics.values())
-    has_nulls = any(
-        m.get("null_trips", 0) > 0 or m.get("negative_trips", 0) > 0
-        for m in metrics.values()
-    )
-
-    if has_errors:
-        status = "ERROR"
-    elif has_nulls:
-        status = "WARNING"
-    else:
-        status = "PASSED"
+    null_trips, negative_trips = daily[4] or 0, daily[5] or 0
+    status = "WARNING" if null_trips > 0 or negative_trips > 0 else "PASSED"
 
     return MaterializeResult(
         metadata={
             "status": MetadataValue.text(status),
-            "daily_summary_rows": MetadataValue.int(
-                metrics.get("daily_summary", {}).get("row_count", 0)
-            ),
-            "hourly_patterns_rows": MetadataValue.int(
-                metrics.get("hourly_patterns", {}).get("row_count", 0)
-            ),
-            "zone_performance_rows": MetadataValue.int(
-                metrics.get("zone_performance", {}).get("row_count", 0)
-            ),
-            "zones_covered": MetadataValue.int(
-                metrics.get("zone_performance", {}).get("zones_covered", 0)
+            "daily_summary_rows": MetadataValue.int(daily[0]),
+            "date_key_range": MetadataValue.text(f"{daily[1]} to {daily[2]}"),
+            "days_covered": MetadataValue.int(daily[3]),
+            "null_trips": MetadataValue.int(null_trips),
+            "negative_trips": MetadataValue.int(negative_trips),
+            "hourly_patterns_rows": MetadataValue.int(hourly[0]),
+            "hours_covered": MetadataValue.int(hourly[1]),
+            "zone_performance_rows": MetadataValue.int(zones[0]),
+            "zones_covered": MetadataValue.int(zones[1]),
+            "avg_route_distance_miles": MetadataValue.float(
+                round(zones[2], 2) if zones[2] is not None else 0.0
             ),
         }
     )
