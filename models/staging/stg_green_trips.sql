@@ -62,3 +62,4 @@ where pickup_datetime is not null
   and pickup_datetime < '{{ var("end_date") }}'::date + interval '1 day'
   and trip_distance >= 0
   and fare_amount >= 0
+  and fare_amount < 1000

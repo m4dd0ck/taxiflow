@@ -73,5 +73,6 @@ where pickup_datetime is not null
   -- negative values make no sense, filter them out
   and trip_distance >= 0
   and fare_amount >= 0
--- TODO: should probably add a filter for trips with unreasonably high fares
--- saw some records with $9999 which are clearly test data or errors
+  -- the data has $9999-style fares that are test records or meter errors
+  -- a real metered fare never gets near $1000 (jfk to outside nyc averages ~$110)
+  and fare_amount < 1000
