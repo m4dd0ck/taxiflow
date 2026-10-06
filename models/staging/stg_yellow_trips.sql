@@ -11,8 +11,10 @@
 
 -- duckdb can read parquet files directly with glob patterns which is pretty nice
 -- took me a while to figure out you don't need to specify the schema
+-- the read_parquet() call lives in _sources.yml (external_location) so Dagster
+-- can see the download as an upstream of this model
 with source as (
-    select * from read_parquet('data/raw/yellow/*.parquet')
+    select * from {{ source('nyc_tlc', 'yellow_tripdata') }}
 ),
 
 renamed as (
