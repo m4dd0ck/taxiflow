@@ -83,4 +83,7 @@ enriched as (
 )
 
 select * from enriched
--- TODO: might want to add a speed filter too - trips over 100mph are suspicious
+-- trips over 100 mph are gps or meter errors, not real taxi rides
+-- speed is null when distance is 0 or the trip is exactly 60 seconds; keep those
+where avg_speed_mph is null
+   or avg_speed_mph <= 100
