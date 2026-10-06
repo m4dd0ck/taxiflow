@@ -30,3 +30,6 @@ history/
 
 # OS
 .DS_Store
+
+# dbt anonymous usage-tracking id (machine-local)
+.user.yml
