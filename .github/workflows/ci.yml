@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,7 +24,13 @@ jobs:
       - name: Install dbt packages
         run: uv run dbt deps --profiles-dir .
 
-      - name: Compile dbt models
+      # A full month of yellow trips is ~50 MB; CI only needs enough rows to exercise
+      # every model and test, so pull the first rows of one month straight from the
+      # TLC bucket via DuckDB's httpfs (no full download).
+      - name: Sample one month of trip data
         run: |
-          mkdir -p data
-          uv run dbt compile --profiles-dir .
+          mkdir -p data/raw/yellow data/raw/green
+          uv run python -m scripts.sample_data --month 2024-10 --yellow-rows 50000 --green-rows 20000
+
+      - name: Build and test all models
+        run: uv run dbt build --profiles-dir .

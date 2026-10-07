@@ -63,6 +63,10 @@ uv run dbt docs serve --profiles-dir .
 - `mart_hourly_patterns` - Demand patterns by hour and day of week
 - `mart_zone_performance` - Zone-to-zone trip statistics
 
+## CI
+
+Every push samples the first 50,000 yellow and 20,000 green trips of one month straight from the TLC bucket (`scripts/sample_data.py`, via DuckDB httpfs) and runs `dbt build`: every model and all 74 data tests, in about two minutes.
+
 ## Data Sources
 
 This project uses official NYC TLC trip record data:
@@ -122,7 +126,7 @@ taxiflow/
 │   └── definitions.py   # Dagster entry point
 ├── seeds/               # Reference data (CSV)
 ├── tests/               # Custom data tests
-├── scripts/             # Python utilities
+├── scripts/             # download_data.py (full months), sample_data.py (CI sample)
 ├── dbt_project.yml      # dbt configuration
 ├── profiles.yml         # Connection settings
 └── packages.yml         # dbt package dependencies
