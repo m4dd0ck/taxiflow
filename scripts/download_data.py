@@ -19,6 +19,7 @@ def download_file(url: str, dest: Path) -> bool:
         return True
 
     print(f"  Downloading {dest.name}...")
+    part = dest.with_suffix(dest.suffix + ".part")
     try:
         with httpx.stream("GET", url, follow_redirects=True, timeout=300) as response:
             if response.status_code == 404:
@@ -26,13 +27,17 @@ def download_file(url: str, dest: Path) -> bool:
                 return False
             response.raise_for_status()
             dest.parent.mkdir(parents=True, exist_ok=True)
-            with open(dest, "wb") as f:
+            # Reason: stream to a .part file so an interrupted download never leaves a
+            # truncated parquet that the exists() check above would treat as complete
+            with open(part, "wb") as f:
                 for chunk in response.iter_bytes(chunk_size=8192):
                     f.write(chunk)
+            part.rename(dest)
         print(f"  Downloaded {dest.name}")
         return True
     except httpx.HTTPError as e:
         print(f"  Error downloading {url}: {e}")
+        part.unlink(missing_ok=True)
         return False
 
 
@@ -98,10 +103,9 @@ def main() -> None:
         help="Taxi types to download",
     )
     parser.add_argument(
-        "--include-zones",
+        "--no-zones",
         action="store_true",
-        default=True,
-        help="Also download zone lookup",
+        help="Skip the taxi zone lookup download",
     )
 
     args = parser.parse_args()
@@ -118,7 +122,7 @@ def main() -> None:
         args.taxi_types,
     )
 
-    if args.include_zones:
+    if not args.no_zones:
         download_zone_lookup()
 
     print("\nDownload complete!")

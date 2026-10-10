@@ -32,6 +32,7 @@ def _download_file(url: str, dest: Path, context: AssetExecutionContext) -> bool
         return True
 
     context.log.info(f"Downloading {dest.name}...")
+    part = dest.with_suffix(dest.suffix + ".part")
     try:
         with httpx.stream("GET", url, follow_redirects=True, timeout=300) as response:
             if response.status_code == 404:
@@ -39,13 +40,17 @@ def _download_file(url: str, dest: Path, context: AssetExecutionContext) -> bool
                 return False
             response.raise_for_status()
             dest.parent.mkdir(parents=True, exist_ok=True)
-            with open(dest, "wb") as f:
+            # Reason: stream to a .part file so an interrupted download never leaves a
+            # truncated parquet that the exists() check above would treat as complete
+            with open(part, "wb") as f:
                 for chunk in response.iter_bytes(chunk_size=8192):
                     f.write(chunk)
+            part.rename(dest)
         context.log.info(f"Downloaded {dest.name}")
         return True
     except httpx.HTTPError as e:
         context.log.error(f"Error downloading {url}: {e}")
+        part.unlink(missing_ok=True)
         return False
 
 
