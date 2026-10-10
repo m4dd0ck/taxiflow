@@ -1,6 +1,6 @@
 [project]
 name = "taxiflow"
-version = "1.0.0"
+version = "1.0.1"
 description = "dbt + DuckDB pipeline over NYC TLC taxi trip data: star schema and analytics marts"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -13,3 +13,4 @@ dependencies = [
     "dagster-webserver>=1.7.0",
     "dagster-dbt>=0.23.0",
 ]
+
