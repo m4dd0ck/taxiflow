@@ -65,7 +65,7 @@ uv run dbt docs serve --profiles-dir .
 
 ## CI
 
-Every push samples the first 50,000 yellow and 20,000 green trips of one month straight from the TLC bucket (`scripts/sample_data.py`, via DuckDB httpfs) and runs `dbt build`: every model and all 74 data tests, in about two minutes.
+Every push samples the first 50,000 yellow and 20,000 green trips of one month straight from the TLC bucket (`scripts/sample_data.py`, via DuckDB httpfs) and runs `dbt build`: every model and all 75 data tests, in about two minutes.
 
 ## Data Sources
 
@@ -184,10 +184,10 @@ ORDER BY revenue DESC;
 ```
 Borough              Trips         Revenue   Avg Fare
 -------------------------------------------------------
-Manhattan        6,505,045  $158,226,534.52    $16.14
-Queens             669,244   $48,155,119.11    $37.19
-Brooklyn           137,800    $4,253,816.11    $25.71
-Bronx               25,353      $909,933.25    $29.82
+Manhattan        6,504,715  $157,877,252.53    $16.11
+Queens             669,158   $48,150,727.56    $37.19
+Brooklyn           137,720    $4,250,891.49    $25.70
+Bronx               25,317      $908,789.73    $29.81
 Staten Island          371       $15,084.87    $28.26
 ```
 
@@ -213,12 +213,12 @@ ORDER BY trips DESC;
 ```
 Period                        Trips   Avg Speed   Avg Fare
 ------------------------------------------------------------
-Off-Peak                  5,798,933    34.2 mph    $31.06
-Evening Rush (5-7 PM)     1,055,244    19.5 mph    $32.09
-Morning Rush (7-9 AM)       503,801    28.4 mph    $31.77
+Off-Peak                  5,034,216    18.4 mph    $39.23
+Evening Rush (5-7 PM)     1,515,466    14.7 mph    $42.36
+Morning Rush (7-9 AM)       807,744    16.8 mph    $38.53
 ```
 
-Evening rush shows 43% slower speeds than off-peak due to congestion.
+Evening rush runs 20% slower than off-peak, and a fifth of all trips start in those three hours.
 
 ### Top 5 Most Popular Routes
 
@@ -236,11 +236,11 @@ LIMIT 5;
 ```
 Pickup Zone                Dropoff Zone                 Trips      Revenue
 ---------------------------------------------------------------------------
-Upper East Side South      Upper East Side North       54,984    $875,278
-Upper East Side North      Upper East Side South       47,223    $769,822
-Upper East Side South      Upper East Side South       36,698    $515,814
-Upper East Side North      Upper East Side North       33,731    $444,928
-Midtown Center             Upper East Side South       25,257    $448,052
+Upper East Side South      Upper East Side North       54,983    $875,264
+Upper East Side North      Upper East Side South       47,220    $769,785
+Upper East Side South      Upper East Side South       36,696    $515,711
+Upper East Side North      Upper East Side North       33,727    $444,859
+Midtown Center             Upper East Side South       25,255    $448,022
 ```
 
 The Upper East Side corridor is the busiest route pair in NYC.
@@ -264,14 +264,14 @@ LIMIT 5;
 ```
 Pickup                     Dropoff                     Trips  Avg Fare  Tip %
 --------------------------------------------------------------------------------
-JFK Airport                Times Sq/Theatre District  17,460   $70.81   15.0%
-LaGuardia Airport          Times Sq/Theatre District  14,780   $51.70   21.8%
-JFK Airport                Outside of NYC             14,271  $109.81   61.0%
-Times Sq/Theatre District  LaGuardia Airport          10,254   $51.75   20.5%
-LaGuardia Airport          Midtown Center              9,351   $48.33   23.2%
+JFK Airport                Times Sq/Theatre District  17,458   $70.81   20.0%
+LaGuardia Airport          Times Sq/Theatre District  14,780   $51.70   24.5%
+JFK Airport                Outside of NYC             14,270  $109.82   81.9%
+Times Sq/Theatre District  LaGuardia Airport          10,253   $51.75   23.8%
+LaGuardia Airport          Midtown Center              9,351   $48.33   25.5%
 ```
 
-JFK trips average $70+ (flat rate to Manhattan). LaGuardia passengers tip better (22% vs 15%).
+JFK trips average $70+ (flat rate to Manhattan). LaGuardia passengers tip better (24% vs 20%; tip rates cover card-paid trips only, since cash tips are not recorded).
 
 ### Connect and Query
 
