@@ -48,10 +48,11 @@ enriched as (
         -- tip percentage - only meaningful for credit card payments (payment_type_id = 1)
         -- cash tips aren't recorded in the data
         -- this is why yellow cab tip stats are skewed toward credit card users
+        -- null (not 0) for everything else so cash trips don't drag the averages down
         case
             when payment_type_id = 1 and fare_amount > 0
             then round((tip_amount / fare_amount) * 100, 2)
-            else 0
+            else null
         end as tip_percentage,
 
         -- avg speed - useful for traffic analysis
@@ -68,8 +69,10 @@ enriched as (
         end as avg_speed_mph,
 
         -- fare per mile - good for comparing zones
+        -- Reason: distances under 0.1 mi are GPS noise and produce four-digit per-mile fares
+        -- that dominate the average, so they get null like avg_speed_mph does
         case
-            when trip_distance > 0
+            when trip_distance >= 0.1
             then round(fare_amount / trip_distance, 2)
             else null
         end as fare_per_mile
