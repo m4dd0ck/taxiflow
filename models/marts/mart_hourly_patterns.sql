@@ -27,8 +27,9 @@ hourly_patterns as (
         d.day_of_week,
         d.day_name,
         -- extracting hour from the HHMM format time key
-        -- integer division drops the minutes which is what we want
-        t.pickup_time_key / 100 as hour_of_day,
+        -- Reason: `/` is float division in DuckDB, which left this mart at minute grain;
+        -- `//` drops the minutes so each row really is one hour
+        t.pickup_time_key // 100 as hour_of_day,
         l.borough,
 
         -- Trip metrics

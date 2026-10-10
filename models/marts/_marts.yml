@@ -67,6 +67,10 @@ models:
         description: Hour of day (0-23)
         data_tests:
           - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 23
+              inclusive: true
       - name: borough
         description: NYC borough of pickup location
       - name: total_trips
