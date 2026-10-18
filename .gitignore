@@ -33,3 +33,6 @@ history/
 
 # dbt anonymous usage-tracking id (machine-local)
 .user.yml
+
+# Secrets
+.env
