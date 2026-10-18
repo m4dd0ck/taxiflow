@@ -1,29 +1,82 @@
 """Download NYC TLC taxi trip data from official sources."""
 
 import argparse
+import logging
+from collections.abc import Iterator
 from datetime import datetime
 from pathlib import Path
+from typing import Protocol
 
 import httpx
 
 
 BASE_URL = "https://d37ci6vzurychx.cloudfront.net/trip-data"
+ZONE_URL = "https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv"
 
 DATA_DIR = Path(__file__).parent.parent / "data" / "raw"
 
 
-def download_file(url: str, dest: Path) -> bool:
-    """Download a file from URL to destination path."""
+class Logger(Protocol):
+    """Anything with info/warning/error taking a message.
+
+    Both `logging.Logger` and Dagster's `context.log` satisfy it, so the script and
+    the Dagster assets share one download helper.
+    """
+
+    def info(self, msg: str) -> object: ...
+
+    def warning(self, msg: str) -> object: ...
+
+    def error(self, msg: str) -> object: ...
+
+
+def iter_months(start: str, end: str) -> Iterator[tuple[int, int]]:
+    """Yield (year, month) pairs from start to end inclusive.
+
+    Args:
+        start: First month as "YYYY-MM".
+        end: Last month as "YYYY-MM".
+
+    Returns:
+        Iterator of (year, month) tuples.
+
+    Raises:
+        ValueError: If either string is not "YYYY-MM".
+    """
+    first = datetime.strptime(start, "%Y-%m")
+    last = datetime.strptime(end, "%Y-%m")
+    year, month = first.year, first.month
+    while (year, month) <= (last.year, last.month):
+        yield year, month
+        month += 1
+        if month > 12:
+            month = 1
+            year += 1
+
+
+def download_file(
+    url: str, dest: Path, log: Logger = logging.getLogger(__name__)
+) -> bool:
+    """Download a file from URL to destination path.
+
+    Args:
+        url: Source URL.
+        dest: Destination file; skipped if it already exists.
+        log: Where progress messages go.
+
+    Returns:
+        True if the file exists afterwards, False on 404 or HTTP error.
+    """
     if dest.exists():
-        print(f"  Skipping {dest.name} (already exists)")
+        log.info(f"Skipping {dest.name} (already exists)")
         return True
 
-    print(f"  Downloading {dest.name}...")
+    log.info(f"Downloading {dest.name}...")
     part = dest.with_suffix(dest.suffix + ".part")
     try:
         with httpx.stream("GET", url, follow_redirects=True, timeout=300) as response:
             if response.status_code == 404:
-                print(f"  File not found: {url}")
+                log.warning(f"File not found: {url}")
                 return False
             response.raise_for_status()
             dest.parent.mkdir(parents=True, exist_ok=True)
@@ -33,51 +86,41 @@ def download_file(url: str, dest: Path) -> bool:
                 for chunk in response.iter_bytes(chunk_size=8192):
                     f.write(chunk)
             part.rename(dest)
-        print(f"  Downloaded {dest.name}")
+        log.info(f"Downloaded {dest.name}")
         return True
     except httpx.HTTPError as e:
-        print(f"  Error downloading {url}: {e}")
+        log.error(f"Error downloading {url}: {e}")
         part.unlink(missing_ok=True)
         return False
 
 
 def download_taxi_data(
-    start_year: int,
-    start_month: int,
-    end_year: int,
-    end_month: int,
+    start: str,
+    end: str,
     taxi_types: list[str] | None = None,
 ) -> None:
-    """Download taxi trip data for specified date range."""
+    """Download taxi trip data for an inclusive "YYYY-MM" range."""
     if taxi_types is None:
         taxi_types = ["yellow", "green"]
 
+    log = logging.getLogger(__name__)
     for taxi_type in taxi_types:
-        print(f"\nDownloading {taxi_type} taxi data...")
+        log.info(f"\nDownloading {taxi_type} taxi data...")
         taxi_dir = DATA_DIR / taxi_type
         taxi_dir.mkdir(parents=True, exist_ok=True)
 
-        year = start_year
-        month = start_month
-        while (year, month) <= (end_year, end_month):
+        for year, month in iter_months(start, end):
             filename = f"{taxi_type}_tripdata_{year}-{month:02d}.parquet"
-            url = f"{BASE_URL}/{filename}"
-            dest = taxi_dir / filename
-            download_file(url, dest)
-
-            month += 1
-            if month > 12:
-                month = 1
-                year += 1
+            download_file(f"{BASE_URL}/{filename}", taxi_dir / filename, log)
 
 
 def download_zone_lookup() -> None:
     """Download taxi zone lookup CSV."""
-    url = "https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv"
+    log = logging.getLogger(__name__)
     dest = DATA_DIR.parent.parent / "seeds" / "taxi_zone_lookup.csv"
     dest.parent.mkdir(parents=True, exist_ok=True)
-    print("\nDownloading taxi zone lookup...")
-    download_file(url, dest)
+    log.info("\nDownloading taxi zone lookup...")
+    download_file(ZONE_URL, dest, log)
 
 
 def main() -> None:
@@ -109,23 +152,16 @@ def main() -> None:
     )
 
     args = parser.parse_args()
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    log = logging.getLogger(__name__)
 
-    start = datetime.strptime(args.start, "%Y-%m")
-    end = datetime.strptime(args.end, "%Y-%m")
-
-    print(f"Downloading data from {args.start} to {args.end}")
-    download_taxi_data(
-        start.year,
-        start.month,
-        end.year,
-        end.month,
-        args.taxi_types,
-    )
+    log.info(f"Downloading data from {args.start} to {args.end}")
+    download_taxi_data(args.start, args.end, args.taxi_types)
 
     if not args.no_zones:
         download_zone_lookup()
 
-    print("\nDownload complete!")
+    log.info("\nDownload complete!")
 
 
 if __name__ == "__main__":
