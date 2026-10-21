@@ -36,8 +36,6 @@ schedules only fire while the dev server (or a daemon) is running.
 
 ## Release
 
-Conventions in `~/developer/hq/CONVENTIONS.md` §Versioning.
-
 1. Bump `version` in `pyproject.toml`; `uv lock`.
 2. Commit `chore: Release vX.Y.Z`, then `git tag -a vX.Y.Z -m "vX.Y.Z"` and
    `git push origin main --tags`.
@@ -47,7 +45,7 @@ Conventions in `~/developer/hq/CONVENTIONS.md` §Versioning.
 
 ## Restore on a new machine
 
-1. Clone `git@github.com:m4dd0ck/taxiflow.git`; `uv sync`; `uv run dbt deps --profiles-dir .`.
+1. Clone `https://github.com/m4dd0ck/taxiflow.git`; `uv sync`; `uv run dbt deps --profiles-dir .`.
 2. Download data (§Full rebuild). No secrets: the TLC bucket is public.
 
 ## Things that bite
@@ -62,5 +60,4 @@ Conventions in `~/developer/hq/CONVENTIONS.md` §Versioning.
 ```bash
 uv run dbt parse --profiles-dir .
 uv run dbt build --profiles-dir .
-python3 ~/.claude/scripts/doc-check.py --repo .
 ```
